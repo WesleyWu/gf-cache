@@ -25,6 +25,7 @@ var (
 	RedisClient            *redis.Client
 	RedisLocker            *redislock.Client
 	LockTimeout            time.Duration
+	CacheItemTtl           time.Duration
 	storage                Storage
 	ErrNilResult           = redis.Nil
 	ErrCacheNotInitialized = errors.New("cache: not initialized")
@@ -37,6 +38,8 @@ func init() {
 	ctx := gctx.New()
 	lockTimeoutSeconds := g.Cfg().MustGet(ctx, "redis.default.lockTimeoutSeconds", 3).Int()
 	LockTimeout = time.Duration(lockTimeoutSeconds) * time.Second
+	cacheItemTtlMinutes := g.Cfg().MustGet(ctx, "redis.default.cacheItemTtlMinutes", 10).Int()
+	CacheItemTtl = time.Duration(cacheItemTtlMinutes) * time.Minute
 	RedisClient = redis.NewClient(&redis.Options{
 		Network:  "tcp",
 		Addr:     g.Cfg().MustGet(ctx, "redis.default.host").String(),

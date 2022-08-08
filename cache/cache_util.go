@@ -101,7 +101,7 @@ func SaveCache(ctx context.Context, serviceName string, cacheKey *string, value 
 		g.Log().Warningf(ctx, "error encoding cache value for key \"%s\"", *cacheKey)
 		return err
 	}
-	err = storage.Set(ctx, *cacheKey, valueBytes, 10*time.Minute)
+	err = storage.Set(ctx, *cacheKey, valueBytes, CacheItemTtl)
 	if err != nil {
 		g.Log().Warningf(ctx, "error save cache for key \"%s\", value \"%s\"", *cacheKey, valueBytes)
 		return err
