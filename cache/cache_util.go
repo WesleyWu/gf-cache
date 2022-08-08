@@ -143,6 +143,9 @@ func ClearCache(ctx context.Context, serviceName string) error {
 		g.Log().Warningf(ctx, "error load cache keyset \"%s\"", cacheKeysetName)
 		return err
 	}
+	if len(keys) == 0 {
+		return nil
+	}
 	err = storage.Delete(ctx, append(keys, cacheKeysetName))
 	if err != nil {
 		g.Log().Warningf(ctx, "error clear cache keys \"%s\"", gstr.Join(keys, ","))
