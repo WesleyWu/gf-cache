@@ -1,4 +1,4 @@
-module devops.gitlab.zfkunyu.com/cartsee-go/base-model
+module github.com/WesleyWu/gf-cache
 
 go 1.18
 
