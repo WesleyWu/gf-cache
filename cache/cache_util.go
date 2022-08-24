@@ -57,13 +57,12 @@ func RetrieveCacheTo(ctx context.Context, cacheKey *string, value any) error {
 		if err == redislock.ErrNotObtained { // 反复等待，直到上一个同 cacheKey 的取 cache 操作结束
 			time.Sleep(10 * time.Millisecond)
 			if gtime.Now().After(startTimestamp.Add(LockTimeout)) { // 等待时间超过 3 秒钟，返回 nil
-				g.Log().Errorf(ctx, "Timeout obtaining lock for cache \"%s\"", *cacheKey)
+				g.Log().Errorf(ctx, "Timeout obtaining lock for cache \"%s\" %s", *cacheKey, err.Error())
 				return ErrLockTimeout
 			}
 			continue
 		} else if err != nil {
-			g.Log().Errorf(ctx, "Error obtaining lock for cache \"%s\" %s", *cacheKey)
-			g.Log().Error(ctx, err)
+			g.Log().Errorf(ctx, "Error obtaining lock for cache \"%s\" %s", *cacheKey, err.Error())
 			return err
 		}
 		lockObtained = true
@@ -80,8 +79,7 @@ func RetrieveCacheTo(ctx context.Context, cacheKey *string, value any) error {
 	}
 	err = gjson.DecodeTo(cachedValue, value)
 	if err != nil {
-		g.Log().Warningf(ctx, "error decoding cache value \"%s\" for key \"%s\"", cachedValue, *cacheKey)
-		g.Log().Error(ctx, err)
+		g.Log().Warningf(ctx, "error decoding cache value \"%s\" for key \"%s\" %s", cachedValue, *cacheKey, err.Error())
 		return err
 	}
 	return nil
@@ -100,20 +98,18 @@ func SaveCache(ctx context.Context, serviceName string, cacheKey *string, value 
 	}
 	valueBytes, err := gjson.Encode(value)
 	if err != nil {
-		g.Log().Warningf(ctx, "error encoding cache value for key \"%s\"", *cacheKey)
-		g.Log().Error(ctx, err)
+		g.Log().Warningf(ctx, "error encoding cache value for key \"%s\" %s", *cacheKey, err.Error())
 		return err
 	}
 	err = storage.Set(ctx, *cacheKey, valueBytes, CacheItemTtl)
 	if err != nil {
-		g.Log().Warningf(ctx, "error save cache for key \"%s\", value \"%s\"", *cacheKey, valueBytes)
-		g.Log().Error(ctx, err)
+		g.Log().Warningf(ctx, "error save cache for key \"%s\", value \"%s\" %s", *cacheKey, valueBytes, err.Error())
 		return err
 	}
 	cacheKeysetName := ServiceCacheKeySetPrefix + serviceName
 	err = storage.SAdd(ctx, cacheKeysetName, *cacheKey)
 	if err != nil {
-		g.Log().Warningf(ctx, "error save cache key \"%s\" to keyset \"%s\"", *cacheKey, cacheKeysetName)
+		g.Log().Warningf(ctx, "error save cache key \"%s\" to keyset \"%s\" %s", *cacheKey, cacheKeysetName, err.Error())
 		return err
 	}
 	return nil
@@ -130,8 +126,7 @@ func DeleteCache(ctx context.Context, cacheKey *string) error {
 	}
 	err := storage.Delete(ctx, []string{*cacheKey})
 	if err != nil {
-		g.Log().Warningf(ctx, "error delete cache key \"%s\"", cacheKey)
-		g.Log().Error(ctx, err)
+		g.Log().Warningf(ctx, "error delete cache key \"%s\" %s", cacheKey, err.Error())
 		return err
 	}
 	return nil
@@ -145,8 +140,7 @@ func ClearCache(ctx context.Context, serviceName string) error {
 	cacheKeysetName := ServiceCacheKeySetPrefix + serviceName
 	keys, err := storage.SMembers(ctx, cacheKeysetName)
 	if err != nil {
-		g.Log().Warningf(ctx, "error load cache keyset \"%s\"", cacheKeysetName)
-		g.Log().Error(ctx, err)
+		g.Log().Warningf(ctx, "error load cache keyset \"%s\" %s", cacheKeysetName, err.Error())
 		return err
 	}
 	if len(keys) == 0 {
@@ -154,8 +148,7 @@ func ClearCache(ctx context.Context, serviceName string) error {
 	}
 	err = storage.Delete(ctx, append(keys, cacheKeysetName))
 	if err != nil {
-		g.Log().Warningf(ctx, "error clear cache keys \"%s\"", gstr.Join(keys, ","))
-		g.Log().Error(ctx, err)
+		g.Log().Warningf(ctx, "error clear cache keys \"%s\" %s", gstr.Join(keys, ","), err.Error())
 		return err
 	}
 	return nil
