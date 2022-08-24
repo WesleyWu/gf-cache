@@ -40,11 +40,14 @@ func init() {
 	LockTimeout = time.Duration(lockTimeoutSeconds) * time.Second
 	cacheItemTtlMinutes := g.Cfg().MustGet(ctx, "redis.default.cacheItemTtlMinutes", 10).Int()
 	CacheItemTtl = time.Duration(cacheItemTtlMinutes) * time.Minute
+	address := g.Cfg().MustGet(ctx, "redis.default.host", "127.0.0.1:6379").String()
+	db := g.Cfg().MustGet(ctx, "redis.default.db", 0).Int()
+	password := g.Cfg().MustGet(ctx, "redis.default.password", "").String()
 	RedisClient = redis.NewClient(&redis.Options{
 		Network:  "tcp",
-		Addr:     g.Cfg().MustGet(ctx, "redis.default.host").String(),
-		DB:       g.Cfg().MustGet(ctx, "redis.default.db").Int(),
-		Password: g.Cfg().MustGet(ctx, "redis.default.password").String(),
+		Addr:     address,
+		DB:       db,
+		Password: password,
 	})
 	info := RedisClient.Info(ctx)
 	cacheInitialized := false

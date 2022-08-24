@@ -62,7 +62,8 @@ func RetrieveCacheTo(ctx context.Context, cacheKey *string, value any) error {
 			}
 			continue
 		} else if err != nil {
-			g.Log().Errorf(ctx, "Error obtaining lock for cache \"%s\"", *cacheKey)
+			g.Log().Errorf(ctx, "Error obtaining lock for cache \"%s\" %s", *cacheKey)
+			g.Log().Error(ctx, err)
 			return err
 		}
 		lockObtained = true
@@ -80,6 +81,7 @@ func RetrieveCacheTo(ctx context.Context, cacheKey *string, value any) error {
 	err = gjson.DecodeTo(cachedValue, value)
 	if err != nil {
 		g.Log().Warningf(ctx, "error decoding cache value \"%s\" for key \"%s\"", cachedValue, *cacheKey)
+		g.Log().Error(ctx, err)
 		return err
 	}
 	return nil
@@ -99,11 +101,13 @@ func SaveCache(ctx context.Context, serviceName string, cacheKey *string, value 
 	valueBytes, err := gjson.Encode(value)
 	if err != nil {
 		g.Log().Warningf(ctx, "error encoding cache value for key \"%s\"", *cacheKey)
+		g.Log().Error(ctx, err)
 		return err
 	}
 	err = storage.Set(ctx, *cacheKey, valueBytes, CacheItemTtl)
 	if err != nil {
 		g.Log().Warningf(ctx, "error save cache for key \"%s\", value \"%s\"", *cacheKey, valueBytes)
+		g.Log().Error(ctx, err)
 		return err
 	}
 	cacheKeysetName := ServiceCacheKeySetPrefix + serviceName
@@ -127,6 +131,7 @@ func DeleteCache(ctx context.Context, cacheKey *string) error {
 	err := storage.Delete(ctx, []string{*cacheKey})
 	if err != nil {
 		g.Log().Warningf(ctx, "error delete cache key \"%s\"", cacheKey)
+		g.Log().Error(ctx, err)
 		return err
 	}
 	return nil
@@ -141,6 +146,7 @@ func ClearCache(ctx context.Context, serviceName string) error {
 	keys, err := storage.SMembers(ctx, cacheKeysetName)
 	if err != nil {
 		g.Log().Warningf(ctx, "error load cache keyset \"%s\"", cacheKeysetName)
+		g.Log().Error(ctx, err)
 		return err
 	}
 	if len(keys) == 0 {
@@ -149,6 +155,7 @@ func ClearCache(ctx context.Context, serviceName string) error {
 	err = storage.Delete(ctx, append(keys, cacheKeysetName))
 	if err != nil {
 		g.Log().Warningf(ctx, "error clear cache keys \"%s\"", gstr.Join(keys, ","))
+		g.Log().Error(ctx, err)
 		return err
 	}
 	return nil
